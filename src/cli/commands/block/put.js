@@ -36,24 +36,21 @@ module.exports = {
     }
   },
 
-  handler (argv) {
-    argv.resolve((async () => {
-      let data
+  async handler (argv) {
+    let data
 
-      if (argv.block) {
-        data = await promisify(fs.readFile)(argv.block)
-      } else {
-        data = await new Promise((resolve, reject) => {
-          process.stdin.pipe(bl((err, input) => {
-            if (err) return reject(err)
-            resolve(input)
-          }))
-        })
-      }
+    if (argv.block) {
+      data = await promisify(fs.readFile)(argv.block)
+    } else {
+      data = await new Promise((resolve, reject) => {
+        process.stdin.pipe(bl((err, input) => {
+          if (err) return reject(err)
+          resolve(input)
+        }))
+      })
+    }
 
-      const ipfs = await argv.getIpfs()
-      const { cid } = await ipfs.block.put(data, argv)
-      argv.print(cidToString(cid, { base: argv.cidBase }))
-    })())
+    const { cid } = await argv.ipfs.api.block.put(data, argv)
+    argv.print(cidToString(cid, { base: argv.cidBase }))
   }
 }

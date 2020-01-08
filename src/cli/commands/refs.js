@@ -35,29 +35,26 @@ module.exports = {
     }
   },
 
-  handler ({ getIpfs, print, key, keys, recursive, format, edges, unique, maxDepth, resolve }) {
-    resolve((async () => {
-      if (maxDepth === 0) {
-        return
-      }
+  handler ({ ipfs, print, key, keys, recursive, format, edges, unique, maxDepth }) {
+    if (maxDepth === 0) {
+      return
+    }
 
-      const ipfs = await getIpfs()
-      const k = [key].concat(keys)
+    const k = [key].concat(keys)
 
-      return new Promise((resolve, reject) => {
-        const stream = ipfs.refsReadableStream(k, { recursive, format, edges, unique, maxDepth })
+    return new Promise((resolve, reject) => {
+      const stream = ipfs.api.refsReadableStream(k, { recursive, format, edges, unique, maxDepth })
 
-        stream.on('error', reject)
-        stream.on('end', resolve)
+      stream.on('error', reject)
+      stream.on('end', resolve)
 
-        stream.on('data', (ref) => {
-          if (ref.err) {
-            print(ref.err, true, true)
-          } else {
-            print(ref.ref)
-          }
-        })
+      stream.on('data', (ref) => {
+        if (ref.err) {
+          print(ref.err, true, true)
+        } else {
+          print(ref.ref)
+        }
       })
-    })())
+    })
   }
 }

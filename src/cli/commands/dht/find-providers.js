@@ -9,23 +9,18 @@ module.exports = {
     'num-providers': {
       alias: 'n',
       describe: 'The number of providers to find. Default: 20.',
-      default: 20
+      default: 20,
+      type: 'number'
     }
   },
 
-  handler (argv) {
-    const { getIpfs, key, resolve } = argv
-    const opts = {
-      maxNumProviders: argv['num-providers']
-    }
+  async handler ({ ipfs, key, print, numProviders }) {
+    const provs = await ipfs.api.dht.findProvs(key, {
+      maxNumProviders: numProviders
+    })
 
-    resolve((async () => {
-      const ipfs = await getIpfs()
-      const provs = await ipfs.dht.findProvs(key, opts)
-
-      provs.forEach((element) => {
-        argv.print(element.id.toB58String())
-      })
-    })())
+    provs.forEach((element) => {
+      print(element.id.toB58String())
+    })
   }
 }

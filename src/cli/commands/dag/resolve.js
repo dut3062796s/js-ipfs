@@ -13,33 +13,30 @@ module.exports = {
     }
   },
 
-  handler ({ ref, getIpfs, print, resolve }) {
-    resolve((async () => {
-      const ipfs = await getIpfs()
-      const options = {}
+  async handler ({ ref, ipfs, print }) {
+    const options = {}
 
-      try {
-        const result = await ipfs.dag.resolve(ref, options)
-        let lastCid
+    try {
+      const result = await ipfs.api.dag.resolve(ref, options)
+      let lastCid
 
-        for (const res of result) {
-          if (CID.isCID(res.value)) {
-            lastCid = res.value
-          }
+      for (const res of result) {
+        if (CID.isCID(res.value)) {
+          lastCid = res.value
         }
-
-        if (!lastCid) {
-          if (ref.startsWith('/ipfs/')) {
-            ref = ref.substring(6)
-          }
-
-          lastCid = ref.split('/').shift()
-        }
-
-        print(lastCid.toString())
-      } catch (err) {
-        return print(`dag get resolve: ${err}`)
       }
-    })())
+
+      if (!lastCid) {
+        if (ref.startsWith('/ipfs/')) {
+          ref = ref.substring(6)
+        }
+
+        lastCid = ref.split('/').shift()
+      }
+
+      print(lastCid.toString())
+    } catch (err) {
+      return print(`dag get resolve: ${err}`)
+    }
   }
 }

@@ -20,17 +20,9 @@ module.exports = {
     }
   },
 
-  handler (argv) {
-    argv.resolve((async () => {
-      const opts = {
-        nocache: argv.nocache,
-        recursive: argv.recursive
-      }
+  async handler ({ ipfs, nocache, recursive, print, name }) {
+    const result = await ipfs.api.name.resolve(name, { nocache, recursive })
 
-      const ipfs = await argv.getIpfs()
-      const result = await ipfs.name.resolve(argv.name, opts)
-
-      argv.print(result)
-    })())
+    print(result)
   }
 }

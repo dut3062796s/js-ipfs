@@ -48,10 +48,10 @@ const checkLock = (repo) => {
 
 async function testSignal (ipfs, sig) {
   await ipfs('init')
-  await ipfs('config', 'Addresses', JSON.stringify({
+  await ipfs(['config', 'Addresses', JSON.stringify({
     API: '/ip4/127.0.0.1/tcp/0',
     Gateway: '/ip4/127.0.0.1/tcp/0'
-  }), '--json')
+  }), '--json'].join(' '))
 
   return new Promise((resolve, reject) => {
     const daemon = ipfs('daemon')
@@ -87,15 +87,13 @@ describe('daemon', () => {
 
   skipOnWindows('do not crash if Addresses.Swarm is empty', async function () {
     this.timeout(100 * 1000)
-    // These tests are flaky, but retrying 3 times seems to make it work 99% of the time
-    this.retries(3)
 
     await ipfs('init')
-    await ipfs('config', 'Addresses', JSON.stringify({
+    await ipfs(['config', 'Addresses', JSON.stringify({
       Swarm: [],
       API: '/ip4/127.0.0.1/tcp/0',
       Gateway: '/ip4/127.0.0.1/tcp/0'
-    }), '--json')
+    }), '--json'].join(' '))
 
     const daemon = ipfs('daemon')
     let stdout = ''

@@ -7,12 +7,9 @@ module.exports = {
 
   builder: {},
 
-  handler ({ getIpfs, print, peerID, resolve }) {
-    resolve((async () => {
-      const ipfs = await getIpfs()
-      const peers = await ipfs.dht.findPeer(peerID)
-      const addresses = peers.multiaddrs.toArray().map((ma) => ma.toString())
-      addresses.forEach((addr) => print(addr))
-    })())
+  async handler ({ ipfs, print, peerID }) {
+    const peers = await ipfs.api.dht.findPeer(peerID)
+    const addresses = peers.multiaddrs.toArray().map((ma) => ma.toString())
+    addresses.forEach((addr) => print(addr))
   }
 }

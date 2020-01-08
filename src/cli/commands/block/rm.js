@@ -20,27 +20,24 @@ module.exports = {
     }
   },
 
-  handler ({ getIpfs, print, hash, force, quiet, resolve }) {
-    resolve((async () => {
-      const ipfs = await getIpfs()
-      let errored = false
+  async handler ({ ipfs, print, hash, force, quiet }) {
+    let errored = false
 
-      for await (const result of ipfs.block._rmAsyncIterator(hash, {
-        force,
-        quiet
-      })) {
-        if (result.error) {
-          errored = true
-        }
-
-        if (!quiet) {
-          print(result.error || 'removed ' + result.hash)
-        }
+    for await (const result of ipfs.api.block._rmAsyncIterator(hash, {
+      force,
+      quiet
+    })) {
+      if (result.error) {
+        errored = true
       }
 
-      if (errored && !quiet) {
-        throw new Error('some blocks not removed')
+      if (!quiet) {
+        print(result.error || 'removed ' + result.hash)
       }
-    })())
+    }
+
+    if (errored && !quiet) {
+      throw new Error('some blocks not removed')
+    }
   }
 }

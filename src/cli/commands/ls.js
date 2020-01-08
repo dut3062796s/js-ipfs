@@ -34,46 +34,43 @@ module.exports = {
     }
   },
 
-  handler ({ getIpfs, print, key, recursive, headers, cidBase, resolve }) {
-    resolve((async () => {
-      const ipfs = await getIpfs()
-      let links = await ipfs.ls(key, { recursive })
+  async handler ({ ipfs, print, key, recursive, headers, cidBase }) {
+    let links = await ipfs.api.ls(key, { recursive })
 
-      links = links.map(file => Object.assign(file, { hash: cidToString(file.hash, { base: cidBase }) }))
+    links = links.map(file => Object.assign(file, { hash: cidToString(file.hash, { base: cidBase }) }))
 
-      if (headers) {
-        links = [{ hash: 'Hash', size: 'Size', name: 'Name' }].concat(links)
-      }
+    if (headers) {
+      links = [{ hash: 'Hash', size: 'Size', name: 'Name' }].concat(links)
+    }
 
-      const multihashWidth = Math.max.apply(null, links.map((file) => file.hash.length))
-      const sizeWidth = Math.max.apply(null, links.map((file) => String(file.size).length))
+    const multihashWidth = Math.max.apply(null, links.map((file) => file.hash.length))
+    const sizeWidth = Math.max.apply(null, links.map((file) => String(file.size).length))
 
-      // replace multiple slashes
-      key = key.replace(/\/(\/+)/g, '/')
+    // replace multiple slashes
+    key = key.replace(/\/(\/+)/g, '/')
 
-      // strip trailing flash
-      if (key.endsWith('/')) {
-        key = key.replace(/(\/+)$/, '')
-      }
+    // strip trailing flash
+    if (key.endsWith('/')) {
+      key = key.replace(/(\/+)$/, '')
+    }
 
-      let pathParts = key.split('/')
+    let pathParts = key.split('/')
 
-      if (key.startsWith('/ipfs/')) {
-        pathParts = pathParts.slice(2)
-      }
+    if (key.startsWith('/ipfs/')) {
+      pathParts = pathParts.slice(2)
+    }
 
-      links.forEach(link => {
-        const fileName = link.type === 'dir' ? `${link.name || ''}/` : link.name
+    links.forEach(link => {
+      const fileName = link.type === 'dir' ? `${link.name || ''}/` : link.name
 
-        // todo: fix this by resolving https://github.com/ipfs/js-ipfs-unixfs-exporter/issues/24
-        const padding = Math.max(link.depth - pathParts.length, 0)
+      // todo: fix this by resolving https://github.com/ipfs/js-ipfs-unixfs-exporter/issues/24
+      const padding = Math.max(link.depth - pathParts.length, 0)
 
-        print(
-          rightpad(link.hash, multihashWidth + 1) +
+      print(
+        rightpad(link.hash, multihashWidth + 1) +
           rightpad(link.size || '-', sizeWidth + 1) +
           '  '.repeat(padding) + fileName
-        )
-      })
-    })())
+      )
+    })
   }
 }

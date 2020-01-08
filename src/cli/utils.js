@@ -2,18 +2,19 @@
 
 const fs = require('fs')
 const os = require('os')
-const multiaddr = require('multiaddr')
 const path = require('path')
 const log = require('debug')('ipfs:cli:utils')
 const Progress = require('progress')
 const byteman = require('byteman')
-const promisify = require('promisify-es6')
-const callbackify = require('callbackify')
+const IPFS = require('../core/index')
 
-exports.isDaemonOn = isDaemonOn
-function isDaemonOn () {
+const getRepoPath = () => {
+  return process.env.IPFS_PATH || path.join(os.homedir(), '/.jsipfs')
+}
+
+const isDaemonOn = () => {
   try {
-    fs.readFileSync(path.join(exports.getRepoPath(), 'api'))
+    fs.readFileSync(path.join(getRepoPath(), 'api'))
     log('daemon is on')
     return true
   } catch (err) {
@@ -22,59 +23,10 @@ function isDaemonOn () {
   }
 }
 
-exports.getAPICtl = getAPICtl
-function getAPICtl (apiAddr) {
-  if (!apiAddr && !isDaemonOn()) {
-    throw new Error('daemon is not on')
-  }
-  if (!apiAddr) {
-    const apiPath = path.join(exports.getRepoPath(), 'api')
-    apiAddr = multiaddr(fs.readFileSync(apiPath).toString()).toString()
-  }
-  // Required inline to reduce startup time
-  const APIctl = require('ipfs-http-client')
-  return APIctl(apiAddr)
-}
-
-exports.getIPFS = (argv, callback) => {
-  if (argv.api || isDaemonOn()) {
-    return callback(null, getAPICtl(argv.api), promisify((cb) => cb()))
-  }
-
-  // Required inline to reduce startup time
-  const IPFS = require('../core')
-  const node = new IPFS({
-    silent: argv.silent,
-    repoAutoMigrate: argv.migrate,
-    repo: exports.getRepoPath(),
-    init: false,
-    start: false,
-    pass: argv.pass
-  })
-
-  const cleanup = callbackify(async () => {
-    if (node && node._repo && !node._repo.closed) {
-      await node._repo.close()
-    }
-  })
-
-  node.on('error', (err) => {
-    callback(err)
-  })
-
-  node.once('ready', () => {
-    callback(null, node, cleanup)
-  })
-}
-
-exports.getRepoPath = () => {
-  return process.env.IPFS_PATH || os.homedir() + '/.jsipfs'
-}
-
 let visible = true
-exports.disablePrinting = () => { visible = false }
+const disablePrinting = () => { visible = false }
 
-exports.print = (msg, newline, isError = false) => {
+const print = (msg, newline, isError = false) => {
   if (newline === undefined) {
     newline = true
   }
@@ -89,7 +41,7 @@ exports.print = (msg, newline, isError = false) => {
   }
 }
 
-exports.createProgressBar = (totalBytes) => {
+const createProgressBar = (totalBytes) => {
   const total = byteman(totalBytes, 2, 'MB')
   const barFormat = `:progress / ${total} [:bar] :percent :etas`
 
@@ -102,7 +54,7 @@ exports.createProgressBar = (totalBytes) => {
   })
 }
 
-exports.rightpad = (val, n) => {
+const rightpad = (val, n) => {
   let result = String(val)
   for (let i = result.length; i < n; ++i) {
     result += ' '
@@ -110,21 +62,54 @@ exports.rightpad = (val, n) => {
   return result
 }
 
-exports.ipfsPathHelp = 'ipfs uses a repository in the local file system. By default, the repo is ' +
+const ipfsPathHelp = 'ipfs uses a repository in the local file system. By default, the repo is ' +
   'located at ~/.jsipfs. To change the repo location, set the $IPFS_PATH environment variable:\n\n' +
   'export IPFS_PATH=/path/to/ipfsrepo\n'
 
-exports.singleton = create => {
-  const requests = []
-  const getter = promisify(cb => {
-    if (getter.instance) return cb(null, getter.instance, ...getter.rest)
-    requests.push(cb)
-    if (requests.length > 1) return
-    create((err, instance, ...rest) => {
-      getter.instance = instance
-      getter.rest = rest
-      while (requests.length) requests.pop()(err, instance, ...rest)
+async function getAPI (argv) {
+  let endpoint = null
+  if (!argv.api && !isDaemonOn()) {
+    const api = await IPFS.create({
+      silent: argv.silent,
+      repoAutoMigrate: argv.migrate,
+      repo: getRepoPath(),
+      init: false,
+      start: false,
+      pass: argv.pass
     })
-  })
-  return getter
+    return {
+      daemon: false,
+      api,
+      cleanup: async () => {
+        if (api && api._repo && !api._repo.closed) {
+          await api._repo.close()
+        }
+      }
+    }
+  }
+
+  if (!argv.api) {
+    const apiPath = path.join(getRepoPath(), 'api')
+    endpoint = fs.readFileSync(apiPath).toString()
+  } else {
+    endpoint = argv.api
+  }
+  // Required inline to reduce startup time
+  const APIctl = require('ipfs-http-client')
+  return {
+    daemon: true,
+    api: APIctl(endpoint),
+    cleanup: async () => { }
+  }
+}
+
+module.exports = {
+  getAPI,
+  isDaemonOn,
+  getRepoPath,
+  disablePrinting,
+  print,
+  createProgressBar,
+  rightpad,
+  ipfsPathHelp
 }

@@ -30,18 +30,15 @@ module.exports = {
     }
   },
 
-  handler: ({ getIpfs, print, ipfsPath, type, quiet, cidBase, resolve }) => {
-    resolve((async () => {
-      const paths = ipfsPath
-      const ipfs = await getIpfs()
-      const results = await ipfs.pin.ls(paths, { type })
-      results.forEach((res) => {
-        let line = cidToString(res.hash, { base: cidBase })
-        if (!quiet) {
-          line += ` ${res.type}`
-        }
-        print(line)
-      })
-    })())
+  async handler ({ ipfs, print, ipfsPath, type, quiet, cidBase }) {
+    const paths = ipfsPath
+    const results = await ipfs.api.pin.ls(paths, { type })
+    results.forEach((res) => {
+      let line = cidToString(res.hash, { base: cidBase })
+      if (!quiet) {
+        line += ` ${res.type}`
+      }
+      print(line)
+    })
   }
 }

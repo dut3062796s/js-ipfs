@@ -18,27 +18,24 @@ module.exports = {
     }
   },
 
-  handler (argv) {
-    argv.resolve((async () => {
-      let data
+  async handler (argv) {
+    let data
 
-      if (argv.data) {
-        data = fs.readFileSync(argv.data)
-      } else {
-        data = await new Promise((resolve, reject) => {
-          process.stdin.pipe(bl((err, input) => {
-            if (err) return reject(err)
-            resolve(input)
-          }))
-        })
-      }
-
-      const ipfs = await argv.getIpfs()
-      const cid = await ipfs.object.patch.appendData(argv.root, data, {
-        enc: 'base58'
+    if (argv.data) {
+      data = fs.readFileSync(argv.data)
+    } else {
+      data = await new Promise((resolve, reject) => {
+        process.stdin.pipe(bl((err, input) => {
+          if (err) return reject(err)
+          resolve(input)
+        }))
       })
+    }
 
-      argv.print(cidToString(cid, { base: argv.cidBase, upgrade: false }))
-    })())
+    const cid = await argv.ipfs.api.object.patch.appendData(argv.root, data, {
+      enc: 'base58'
+    })
+
+    argv.print(cidToString(cid, { base: argv.cidBase, upgrade: false }))
   }
 }

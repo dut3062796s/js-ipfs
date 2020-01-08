@@ -5,24 +5,20 @@ module.exports = {
 
   describe: 'List all local references.',
 
-  handler ({ getIpfs, print, resolve }) {
-    resolve((async () => {
-      const ipfs = await getIpfs()
+  handler ({ ipfs, print }) {
+    return new Promise((resolve, reject) => {
+      const stream = ipfs.api.refs.localReadableStream()
 
-      return new Promise((resolve, reject) => {
-        const stream = ipfs.refs.localReadableStream()
+      stream.on('error', reject)
+      stream.on('end', resolve)
 
-        stream.on('error', reject)
-        stream.on('end', resolve)
-
-        stream.on('data', (ref) => {
-          if (ref.err) {
-            print(ref.err, true, true)
-          } else {
-            print(ref.ref)
-          }
-        })
+      stream.on('data', (ref) => {
+        if (ref.err) {
+          print(ref.err, true, true)
+        } else {
+          print(ref.ref)
+        }
       })
-    })())
+    })
   }
 }
