@@ -102,7 +102,7 @@ jobs:
     - stage: test
       name: external - ipfs-webui
       script:
-        - E2E_IPFSD_TYPE=js npm run test:external -- ipfs-webui https://github.com/ipfs-shipyard/ipfs-webui.git --branch "fix/test-external"
+        - E2E_IPFSD_TYPE=js IPFS_JS_EXEC=$(realpath ./src/cli/bin.js) npm run test:external -- ipfs-webui https://github.com/ipfs-shipyard/ipfs-webui.git --branch "fix/test-external"
 
     - stage: test
       name: external - ipfs-companion
