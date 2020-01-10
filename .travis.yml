@@ -40,7 +40,7 @@ jobs:
       name: external - ipfs-webui
       script:
         - npm ci
-        - E2E_IPFSD_TYPE=js IPFS_JS_EXEC=$(realpath ./src/cli/bin.js) npm run test:external -- ipfs-webui https://github.com/ipfs-shipyard/ipfs-webui.git --branch "fix/test-external"
+        - DEBUG=true E2E_IPFSD_TYPE=js IPFS_JS_EXEC=$(realpath ./src/cli/bin.js) npm run test:external -- ipfs-webui https://github.com/ipfs-shipyard/ipfs-webui.git --branch "fix/test-external"
 
 notifications:
   email: false
